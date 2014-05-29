@@ -40,7 +40,6 @@ class Actor
     puts path[step_number-1]
   end
   def step_number_of x, y
-    binding.pry
     puts path.index(Cell.new(x,y))
   end
 end
