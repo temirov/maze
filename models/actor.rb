@@ -1,45 +1,70 @@
-require_relative 'cell'
-require_relative 'maze'
-require_relative 'step'
-
 class Actor 
-  attr_accessor :location, :maze, :step, :path
+  attr_accessor :path
 
-  def initialize location: Cell.new(1,1), maze: Maze.new(9,9), step: Step.new
+  def initialize maze, gait: Gait.new
     raise ArgumentError unless 
-      location.respond_to? :move and 
-      maze.respond_to? :go_to and 
-      maze.respond_to? :teleport and 
-      step.respond_to? :next and
-      step.respond_to? :restart and
-
-    @location = location
+      maze.respond_to? :accessible? and 
+      maze.respond_to? :teleport_from and 
+      maze.respond_to? :enter and 
+      maze.respond_to? :exit and 
+      gait.respond_to? :step and
+      gait.respond_to? :restart and
+    
     @maze = maze
-    @step = step
+    @gait = gait
+    @location = @maze.enter
+    raise ArgumentError unless @location.respond_to? :move
+
+    @path = [@location]
   end
 
-  def walk
-    if maze.go_to location
-      location.move step.next
-    else
-      self.location = maze.teleport
-      step.restart
+  def pass stop_at: @maze.exit, steps: @maze.cells
+    raise ArgumentError unless @maze.accessible? stop_at and steps < @maze.cells
+
+    walk until path.last == stop_at or path.count == steps
+  end
+
+  private
+    def visited? cell
+      path.include? cell
     end
-  end
+    def jump
+      self.location = @maze.teleport_from path.last
+      @gait.restart
+    end
+    def location
+      @location.dup
+    end
+    def location= cell
+      @location = cell
+      @path << location
+    end
+    def walk
+      next_step = location.move @gait.step
+      if visited? next_step or not @maze.accessible? next_step
+        jump
+      else
+        self.location = next_step
+      end
+    end
 
-  def pass
-    walk until maze.end?
-    self.path = maze.visited.dup
-  end
+  class Gait
+    attr_accessor :steps
 
-  def visited? x, y
-    path.include? Cell.new(x,y)
-  end
+    def initialize steps: [:right, :down, :left], first_step: 0
+      @steps = steps
+      @index = first_step
+    end
 
-  def step_coordinates_of step_number
-    puts path[step_number-1]
-  end
-  def step_number_of x, y
-    puts path.index(Cell.new(x,y))
+    def step
+      restart if @index == steps.count
+      step = steps[@index]
+      @index += 1
+      step
+    end
+
+    def restart
+      @index = 0 
+    end
   end
 end
