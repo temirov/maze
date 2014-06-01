@@ -1,9 +1,11 @@
+require 'forwardable'
+
 class Actor 
   attr_accessor :path
 
   def initialize maze, gait: Gait.new
     raise ArgumentError unless 
-      maze.respond_to? :accessible? and 
+      maze.respond_to? :accessible_at? and 
       maze.respond_to? :teleport_from and 
       maze.respond_to? :enter and 
       maze.respond_to? :exit and 
@@ -12,16 +14,17 @@ class Actor
     
     @maze = maze
     @gait = gait
+
     @location = @maze.enter
     raise ArgumentError unless @location.respond_to? :move
 
-    @path = [@location]
+    @path = Path.new([location])
   end
 
-  def pass stop_at: @maze.exit, steps: @maze.cells
-    raise ArgumentError unless @maze.accessible? stop_at and steps < @maze.cells
+  def pass stop: @maze.exit, steps: @maze.cells
+    raise ArgumentError unless @maze.accessible_at? stop and steps <= @maze.cells
 
-    walk until path.last == stop_at or path.count == steps
+    walk until path.last == stop or path.count == steps
   end
 
   private
@@ -41,12 +44,25 @@ class Actor
     end
     def walk
       next_step = location.move @gait.step
-      if visited? next_step or not @maze.accessible? next_step
+      if visited? next_step or not @maze.accessible_at? next_step
         jump
       else
         self.location = next_step
       end
     end
+
+  class Path 
+    extend Forwardable
+    def_delegators :@list, :<<, :count, :include?, :last, :each_with_index, :map
+
+    def initialize(list = [])
+      @list = list
+    end
+
+    def to_ary
+      self.map.each_with_index{ |e, i| "#{e}, step: #{i}" }
+    end
+  end
 
   class Gait
     attr_accessor :steps

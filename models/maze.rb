@@ -15,7 +15,7 @@ class Maze
     trail.last
   end 
 
-  def accessible? cell
+  def accessible_at? cell
     not wall?(cell)
   end
 
@@ -53,7 +53,7 @@ class Maze
     end
 
     def to_s
-      "x=#{x}, y=#{y};\n"
+      "x=#{x}, y=#{y}"
     end
     
     private 

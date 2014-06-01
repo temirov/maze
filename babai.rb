@@ -7,7 +7,7 @@ babai = Actor.new maze
 # x = STDIN.gets.chomp
 # y = STDIN.gets.chomp
 
-babai.pass steps: 70
+# babai.pass steps: 70
+# puts babai.path
+babai.pass stop: Maze::Cell.new(4,5)
 puts babai.path
-
-# puts babai.step_number_of x.to_i, y.to_i
